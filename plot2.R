@@ -24,7 +24,6 @@ g <- g +geom_line() +
                 ,panel.grid.major = element_blank()
                 ,panel.grid.minor = element_blank()
         ) +
-        theme(axis.line = element_line(color = 'black')) +
         scale_x_datetime(breaks="1 day",
                          labels=date_format(c("Sat","Thu","Fri")))+
         labs(y="Global Active Power (kilowatts)")+
