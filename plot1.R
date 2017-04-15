@@ -1,40 +1,57 @@
-## set path for file
-path <- "/Users//shota/R/exploratory_data_analysis///data//household_power_consumption.txt"
+setwd("/Users/shotashimizu/git/Coursera-Data-Science/Exploratory_Data_Analysis/2nd/course_project_1/")
+tmp <- read.table("../data/household_power_consumption.txt",
+                  header = T,
+                  sep = ";",
+                  na.strings = "?",
+                  colClasses = c(rep("character",2),rep("numeric",7)),
+                  skip = as.integer(396 + 1440* (ymd("2007-2-1") - ymd("2006-12-16")-1)),
+                  nrows = 1440*2)
 
-## read data for 01/02/2007 and 02/02/2007
-data <- read.csv(path,skip=66636,header=TRUE,nrows=2880,sep=";")
+names <- read.table("../data/household_power_consumption.txt",
+                    sep = ";",
+                    colClasses = c(rep("character",9)),
+                    nrows = 1)
 
-## get names from header
-names <- read.csv(path,nrows=1,header=FALSE,sep=";")
-names(data) <- sapply(names,as.character)
+names(tmp) <- names
 
-## convert Date and Time
-data$Date <- as.Date(data$Date,format="%d/%m/%Y")
-data$Time <- strptime(paste(data$Date,data$Time), "%Y-%d-%m %H:%M:%S")
+library(lubridate)
+library(dplyr)
 
-## make the plots
-library(ggplot2)
+tmp2 <- tbl_df(tmp[complete.cases(tmp),])
+df <- tmp2 %>%
+  mutate(Date = dmy(Date), Time = hms(Time)) %>%
+  filter(Date == ymd("2007-02-01") | Date == ymd("2007-02-02"))
 
-#qplot(Global_active_power,data=data,fill="red")
-g <- ggplot(data,aes(Global_active_power))
-g <- g + 
-        geom_histogram(fill="red",binwidth=0.5,col="black") +
-        labs(x="Global Active Power (kilowatts)") + 
-        labs(y="Frequency") + 
-        labs(title="Global Active Power") +
-        theme(plot.title = element_text(face="bold")) +
-        xlim(0,6) + 
-        ylim(0,1300) + 
-        scale_y_continuous(breaks = seq(0, 1200, 200))+
-        theme_bw() +
-        theme(
-                plot.background = element_blank()
-                ,panel.grid.major = element_blank()
-                ,panel.grid.minor = element_blank()
-                ,panel.border = element_blank()
-        ) +
-        theme(axis.line = element_line(color = 'black'))
-print(g)
+rm(tmp)
+rm(tmp2)
 
-dev.copy(png,file="/Users//shota/git//ExData_Plotting1/plot1.png")
+dev.new(width=480,height=480)
+{
+  hist(df$Global_active_power, 
+       col = "red",
+       xlim = range(c(0,6)),
+       xlab = "Global Active Power(kilowatts)", 
+       ylab = "Frequency", 
+       main="Global Active Power")
+}
+dev.copy(png, "plot1.png", width=480, height=480, units = "px")
+dev.off()
+
+getwd()
+setwd("/Users/shotashimizu/git/Coursera-Data-Science/Exploratory_Data_Analysis/2nd/course_project_1/")
+png(file = "plot1.png", width=480, height=480, units = "px")
+{
+  with(df, hist(
+    Global_active_power, 
+    col = "red",
+    xlim = range(c(0,6)),
+    xlab = "Global Active Power(kilowatts)", 
+    ylab = "Frequency", 
+    main="Global Active Power",
+    xaxt = "n",
+    yaxt = "n")
+  )
+  axis(1, at = seq(0,6,by=2),las=2)
+  axis(2, at = seq(0,1200,by=200), las = 2)
+}
 dev.off()

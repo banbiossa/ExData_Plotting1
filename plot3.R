@@ -1,46 +1,48 @@
-## set path for file
-path <- "/Users//shota/R/exploratory_data_analysis///data//household_power_consumption.txt"
+setwd("/Users/shotashimizu/git/Coursera-Data-Science/Exploratory_Data_Analysis/2nd/course_project_1/")
+tmp <- read.table("../data/household_power_consumption.txt",
+                  header = T,
+                  sep = ";",
+                  na.strings = "?",
+                  colClasses = c(rep("character",2),rep("numeric",7)),
+                  skip = as.integer(396 + 1440* (ymd("2007-2-1") - ymd("2006-12-16")-1)),
+                  nrows = 1440*2)
 
-## read data for 01/02/2007 and 02/02/2007
-data <- read.csv(path,skip=66636,header=TRUE,nrows=2880,sep=";")
+names <- read.table("../data/household_power_consumption.txt",
+                    sep = ";",
+                    colClasses = c(rep("character",9)),
+                    nrows = 1)
 
-## get names from header
-names <- read.csv(path,nrows=1,header=FALSE,sep=";")
-names(data) <- sapply(names,as.character)
+names(tmp) <- names
 
-## convert Date and Time
-data$Date <- as.Date(data$Date,format="%d/%m/%Y")
-data$Time <- strptime(paste(data$Date,data$Time), "%Y-%m-%d %H:%M:%S")
+library(lubridate)
+library(dplyr)
 
-## make the plots
-library(ggplot2)
-library(scales)
+tmp2 <- tbl_df(tmp[complete.cases(tmp),])
+df <- tmp2 %>%
+  mutate(Date = dmy(Date)) %>%
+  filter(Date == ymd("2007-02-01") | Date == ymd("2007-02-02")) %>%
+  mutate(DateTime  = ymd_hms(paste(Date,Time)))
 
-g <- ggplot(data,aes(x=Time))+
-        geom_line(aes(y=Sub_metering_1,color="Sub_metering_1"))+
-        geom_line(aes(y=Sub_metering_2,color="Sub_metering_2"))+
-        geom_line(aes(y=Sub_metering_3,color="Sub_metering_3"))+
-        labs(color="")+
-        scale_color_manual("",
-                             breaks=c("Sub_metering_1","Sub_metering_2","Sub_metering_3"),
-                             values=c("black","blue","red"))+
-        theme_bw()+
-        theme(
-                plot.background = element_blank(),
-                panel.grid.major = element_blank(),
-                panel.grid.minor = element_blank(),
-                legend.position = c(.873,.879),
-                legend.background = element_rect(color = "black", 
-                                                size = 0.2, 
-                                                linetype = "solid"),
-                legend.key = element_blank()
-        ) +
-        theme(axis.line = element_line(color = 'black')) +
-        scale_x_datetime(breaks="1 day",
-                         labels=date_format(c("Sat","Thu","Fri")))+
-        labs(x="") + 
-        labs(y="Energy sub metering")
-        
-print(g)
-dev.copy(png,file="/Users//shota/git//ExData_Plotting1/plot3.png")
+
+png(file = "plot3.png", width=480, height=480, units = "px")
+{
+  with(df,{
+    plot(DateTime,Sub_metering_1,
+         xlab = "",
+         ylab = "Energy Sub Metering",
+         #xaxt = "n",
+         yaxt = "n",
+         type = "l"
+    )
+    lines(DateTime, Sub_metering_2,
+          col = "red")
+    lines(DateTime, Sub_metering_3,
+          col = "blue")
+    legend("topright", lwd = 1,
+           col=c("black","blue","red"),
+           legend=c("Sub_metering_1","Sub_metering_2","Sub_metering_3"))
+  })
+  axis(2, at = seq(0,30,by=10),las=2)
+  #axis(1, at = seq(0,1200,by=200), las = 2)
+}
 dev.off()
